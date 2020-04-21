@@ -75,9 +75,10 @@ def plotit(vertices, arcos):
 
 if __name__ == '__main__':
 
+    semilla = int(os.getenv('SEMILLA', time.time_ns() % 2**32))
     cuantos = int(os.getenv('NODOS', 6))
     dimensiones = int(os.getenv('DIMENSIONES', 2))
-    np.random.seed(time.time_ns() % 2**32)                 # Seteamos la semilla del random
+    np.random.seed(semilla)                             # Seteamos la semilla del random
 
     nodos = generar_grafo(cuantos, dimensiones)         # Generamos al azar una serie de puntos en el espacio:
 
@@ -102,7 +103,7 @@ if __name__ == '__main__':
 
     Aeq = np.block([
         [Aeq1],
-        [ Aeq2]
+        [Aeq2]
     ])
 
     res = linprog(C, A_eq=Aeq, b_eq=beq, bounds=bounds, method='revised simplex')

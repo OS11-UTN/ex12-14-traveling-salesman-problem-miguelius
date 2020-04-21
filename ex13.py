@@ -4,7 +4,10 @@ import time
 
 import numpy as np
 
-from ex12 import generar_grafo
+from ex12 import generar_grafo, plotit
+
+def arcs_from_cromosoma(cromo):
+    return [(x,y) for x, y in zip(cromo, cromo[1:])]
 
 
 def RandomPopulation(nodos, population_size):
@@ -35,10 +38,10 @@ if __name__ == '__main__':
     semilla = int(os.getenv('SEMILLA', time.time_ns() % 2**32))
     cuantos = int(os.getenv('NODOS', 6))
     dimensiones = int(os.getenv('DIMENSIONES', 2))
-    no_improvements_max = float(os.getenv('NO_IMPROVMENTS_MAX', 2))
+    no_improvements_max = int(os.getenv('NO_IMPROVMENTS_MAX', 2))
     population_size = int(os.getenv('POPULATION_SIZE', 10))
     elite_size = int(os.getenv('ELITE_SIZE', 5))
-    mutation_rate = float(os.getenv('MUTATION_RATEO', 0.5))
+    mutation_rate = float(os.getenv('MUTATION_RATE', 0.5))
     np.random.seed(semilla)                                     # Seteamos la semilla del random
 
     nodos = generar_grafo(cuantos, dimensiones)                 # Generamos al azar una serie de puntos en el espacio:
@@ -57,3 +60,8 @@ if __name__ == '__main__':
             best_fit = fitness_result[0][0]
         else:
             no_improvements += 1
+
+    arcos = arcs_from_cromosoma(fitness_result[0][1])
+    print("El camino es: %s" % arcos)
+    print(f"El costo total es: {best_fit}")
+    plotit(nodos, arcos)
