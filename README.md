@@ -36,6 +36,8 @@ python ex13.py
 
 It shares the same arguments as environment variables an a couple of extra.
 
+Quick and unstable method, altough it has no cycles.
+
 ### Parameters 
 
 Let's see them:
