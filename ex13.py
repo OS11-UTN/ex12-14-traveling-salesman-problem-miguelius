@@ -22,6 +22,7 @@ def RankRoutes(nodos, population):
         for x, y in zip(p, p[1:]):
             d+= np.linalg.norm(nodos[x] - nodos[y])
         ranking.append((d,p))
+    ranking.sort(key=operator.itemgetter(0))
     return ranking
 
 def mutate(p):
@@ -49,18 +50,23 @@ def cross_over(p, q):
     return r
 
 
-def GetNextGeneration(parents, population_size, mutation_rate):
-    rs = [p[1] for p in parents]
-    ps = np.array([p[1] for p in parents])
-    while len(rs) < population_size:
-      if np.random.rand() < mutation_rate:     # mutate
-          r = mutate(ps[np.random.randint(len(ps))])
-      else:                                    # crossover
-          p = ps[np.random.randint(len(ps))]
-          q = ps[np.random.randint(len(ps))]
-          r = cross_over(p,q)
-      rs.append(r)
-    #ordered cross over
+def GetNextGeneration(elite, parents, population_size, mutation_rate):
+    rs = []
+    ps = np.array([p[1] for p in elite])
+    parents_size = len(parents)
+    for i in range(population_size - len(parents)):
+        # crossover
+        idx = np.random.randint(parents_size)
+        idx2 = np.random.randint(parents_size - idx) - 1
+        p = parents[idx].copy()
+        q = parents[idx2].copy()
+        r = cross_over(p, q)
+        rs.append(r)
+
+    # mutates before sending back
+    rs = [ r if np.random.rand() > mutation_rate else mutate(r) for r in rs ]
+    for p in ps:
+        rs.append(p)
     return rs
 
 def PerformSelection(fitness_result, elite_size):
@@ -75,40 +81,40 @@ def PerformSelection(fitness_result, elite_size):
     probas.sort(key=operator.itemgetter(0))
     seleccion = [ p[1] for p in probas ][:elite_size] # rescato los fitness
     seleccion.sort(key=operator.itemgetter(0))
-
+    seleccion = [ p[1] for p in seleccion ]
     #print(elite_size)
-    #fitness_result.sort(key=operator.itemgetter(0))
+    fitness_result.sort(key=operator.itemgetter(0))
     #return fitness_result[:elite_size]
-    return seleccion
+    return fitness_result[:elite_size], seleccion
 
 if __name__ == '__main__':
     # parametros
     semilla = int(os.getenv(                        'SEMILLA', time.time_ns() % 2**32))
     cuantos = int(os.getenv(                          'NODOS',                     10))
     dimensiones = int(os.getenv(                'DIMENSIONES',                      2))
-    no_improvements_max = int(os.getenv( 'NO_IMPROVMENTS_MAX',                     10))
-    population_size = int(os.getenv(        'POPULATION_SIZE',                     10))
-    elite_size = int(os.getenv(                  'ELITE_SIZE',                      6))
+    no_improvements_max = int(os.getenv( 'NO_IMPROVMENTS_MAX',                     20))
+    population_size = int(os.getenv(        'POPULATION_SIZE',                    100))
+    elite_size = int(os.getenv(                  'ELITE_SIZE',                     10))
     mutation_rate = float(os.getenv(          'MUTATION_RATE',                   0.10))
     np.random.seed(semilla)                                     # Seteamos la semilla del random
 
     nodos = generar_grafo(cuantos, dimensiones)                 # Generamos al azar una serie de puntos en el espacio:
-    initial_population = RandomPopulation(nodos, population_size)
+    population = RandomPopulation(nodos, population_size)
 
-    fitness_result = RankRoutes(nodos, initial_population)
+    fitness_result = RankRoutes(nodos, population)
     best_fit = fitness_result[0][0]
 
     no_improvements = 0
     fits = [best_fit]
     while no_improvements_max > no_improvements:
-        parents = PerformSelection(fitness_result, elite_size)
-        population = GetNextGeneration(parents, population_size, mutation_rate)
+        elite, parents = PerformSelection(fitness_result, elite_size)
+        population = GetNextGeneration(elite, parents, population_size, mutation_rate)
         fitness_result = RankRoutes(nodos, population)
 
         current_fit = fitness_result[0][0]
         fits.append(current_fit)
 
-        if  current_fit >= best_fit:
+        if  current_fit > best_fit:
             best_fit = current_fit
             no_improvements = 0
         else:
